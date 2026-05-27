@@ -3,6 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![GitHub](https://img.shields.io/badge/GitHub-sadnanalmanir%2Ffairscape--grok--grader-blue?logo=github)](https://github.com/sadnanalmanir/fairscape-grok-grader)
+[![Changelog](https://img.shields.io/badge/changelog-keep%20a%20changelog-orange.svg)](CHANGELOG.md)
 
 **Grok-native AI-Ready rubric grader for FAIRSCAPE RO-Crates.**
 
