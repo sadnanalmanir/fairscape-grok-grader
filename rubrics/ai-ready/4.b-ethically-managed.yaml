@@ -1,0 +1,91 @@
+id: "4.b"
+criterion: "Ethics"
+sub_criterion: "Ethically Managed"
+
+practice: |
+  Data management must align with ethical principles throughout the
+  health AI lifecycle. Indicate privacy-protection processing, if any,
+  sufficient to evaluate ethical status for intended use.
+suggested_resources: ["HL7 privacy protection metadata"]
+
+intent: |
+  A reader can see how the data is *managed* through processing and
+  release — what privacy-protection steps were applied
+  (de-identification, k-anonymity, differential privacy, aggregation),
+  who reviews it ethically, and what governance is in place. Distinct
+  from 4.a (acquisition) — this is what happens *after* collection.
+
+what_to_look_for:
+  - ethicalReview narrative — describing ongoing ethical oversight
+    of management.
+  - Privacy-protection processing documented — de-identification
+    method (Safe Harbor / Expert Determination), k-anonymity,
+    differential privacy, aggregation level, etc.
+  - Data Governance Committee or equivalent named.
+  - confidentialityLevel — the classification (HL7 code) that
+    drives how strict the privacy-protection processing must be.
+    A "restricted" or "very restricted" classification with no
+    privacy-protection method described is a meaningful gap.
+  - HL7 privacy protection metadata / FHIR security tags where
+    applicable.
+
+extractor_inputs:
+  type: object
+  properties:
+    ethical_review_text:
+      type: ["string", "null"]
+      description: ethicalReview field on root dataset
+    governance_committee:
+      type: ["string", "null"]
+      description: |
+        dataGovernanceCommittee, or additionalProperty whose name
+        matches 'Data Governance Committee'.
+    privacy_protection_text:
+      type: ["string", "null"]
+      description: |
+        any narrative or additionalProperty referencing
+        de-identification, anonymization, k-anonymity, differential
+        privacy, aggregation, or HL7 privacy tags.
+    confidentiality_level:
+      type: ["string", "null"]
+      description: confidentialityLevel on the root dataset (HL7 code — normal / restricted / very restricted)
+
+scoring:
+  "0":
+    label: "Absent"
+    rule: |
+      No description of management practices — no ethical review,
+      no privacy-protection processing, no governance.
+  "1":
+    label: "Partial"
+    rule: |
+      Some management documented (e.g., a governance committee
+      named) but privacy-protection processing is unspecified or
+      vague, or ethical review is not discussed where the data
+      type would require it.
+  "2":
+    label: "Substantive"
+    rule: |
+      Privacy-protection processing is described concretely (named
+      method or rationale for none-needed), ethical review is
+      addressed, and governance oversight is identified.
+
+output_schema:
+  type: object
+  required: [score, rationale, evidence]
+  additionalProperties: false
+  properties:
+    score:
+      type: integer
+      enum: [0, 1, 2]
+    rationale:
+      type: string
+      description: "1–3 sentences citing the rule that applied."
+    evidence:
+      type: array
+      items: { type: string }
+      description: "Direct quotes or @id refs from the crate that justify the score."
+    gaps:
+      type: array
+      items: { type: string }
+      description: "Specific things missing that would raise the score. Empty if score is 2."

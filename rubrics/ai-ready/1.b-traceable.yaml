@@ -1,0 +1,90 @@
+id: "1.b"
+criterion: "Provenance"
+sub_criterion: "Traceable"
+
+practice: |
+  Identify key data transformation steps, with links to software, at
+  an appropriate level of detail, ideally using a machine-readable
+  representation.
+suggested_resources: ["W3C PROV", "EVI"]
+
+intent: |
+  A reader can walk from raw inputs to final outputs through named
+  transformation steps. Each step says what software did it and what
+  it consumed and produced, so the chain is reconstructable rather
+  than a single black-box "data was processed" claim.
+
+what_to_look_for:
+  - Computation (or Activity) entities forming a chain — each consumes
+    upstream Datasets and produces downstream ones.
+  - Each Computation links to a Software entity (e.g., usedSoftware,
+    evi:usedSoftware).
+  - Granularity sufficient to distinguish meaningful steps (alignment,
+    QC, normalization, feature extraction) rather than one giant step.
+  - Inputs / outputs explicitly named on each Computation.
+
+# Counting how many transformations exist is easy; judging granularity
+# and whether each step is software-linked is what the LLM does.
+extractor_inputs:
+  type: object
+  properties:
+    computation_count:
+      type: integer
+      description: count of entities whose @type contains 'Computation'
+    computation_with_software_link_count:
+      type: integer
+      description: count of Computations with a non-empty usedSoftware (or evi:usedSoftware)
+    computation_with_io_count:
+      type: integer
+      description: count of Computations with both inputs and outputs declared
+    dataset_count:
+      type: integer
+      description: count of entities whose @type contains 'Dataset' (root crate excluded)
+    software_count:
+      type: integer
+      description: count of entities whose @type contains 'Software'
+    computation_samples:
+      type: array
+      description: |
+        Up to 8 Computation entity dicts. Include @id, name, description,
+        usedSoftware, inputs/used, outputs/generated.
+
+scoring:
+  "0":
+    label: "Absent"
+    rule: |
+      No transformation steps documented — no Computation or Activity
+      entities, or they exist as bare stubs without inputs/outputs.
+  "1":
+    label: "Partial"
+    rule: |
+      Some transformation steps exist but the chain is coarse (a
+      single "processing" step covering many real operations), or
+      most Computations are missing software links, or inputs/outputs
+      are not consistently declared.
+  "2":
+    label: "Substantive"
+    rule: |
+      Substantively all key transformations are captured as their own
+      step at a meaningful granularity, each linked to the Software
+      that performed it and with inputs/outputs declared.
+
+output_schema:
+  type: object
+  required: [score, rationale, evidence]
+  additionalProperties: false
+  properties:
+    score:
+      type: integer
+      enum: [0, 1, 2]
+    rationale:
+      type: string
+      description: "1–3 sentences citing the rule that applied."
+    evidence:
+      type: array
+      items: { type: string }
+      description: "Direct quotes or @id refs from the crate that justify the score."
+    gaps:
+      type: array
+      items: { type: string }
+      description: "Specific things missing that would raise the score. Empty if score is 2."

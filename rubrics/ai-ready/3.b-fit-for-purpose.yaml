@@ -1,0 +1,86 @@
+id: "3.b"
+criterion: "Pre-model Explainability"
+sub_criterion: "Fit for Purpose"
+
+practice: |
+  Identify appropriate and inappropriate use cases for the data set.
+  Link to any previously published analyses using this data.
+suggested_resources: ["Croissant RAI"]
+
+intent: |
+  A reader can tell what this dataset is *for* and what it's *not
+  for*, and can find prior work that's already used it. Both
+  directions matter — appropriate uses guide application, and
+  inappropriate or out-of-scope uses prevent misuse. Linked prior
+  analyses help calibrate expectations.
+
+what_to_look_for:
+  - rai:dataUseCases narrative — concrete, specific use cases the
+    dataset was prepared for.
+  - rai:dataLimitations narrative — what the dataset will not
+    support, where inferences would over-reach, populations not
+    represented.
+  - prohibited or restricted uses called out explicitly
+    (prohibitedUses, additionalProperty entries).
+  - associatedPublication / citation / hasPart links pointing to
+    prior analyses or the originating publication.
+
+extractor_inputs:
+  type: object
+  properties:
+    rai_dataUseCases:
+      type: ["string", "null"]
+      description: value of rai:dataUseCases on the root dataset
+    rai_dataLimitations:
+      type: ["string", "null"]
+      description: value of rai:dataLimitations on the root dataset
+    prohibited_uses:
+      type: ["string", "null"]
+      description: |
+        prohibitedUses field, or additionalProperty whose name
+        matches 'Prohibited Uses' (or similar).
+    associated_publications:
+      type: array
+      description: |
+        list of associatedPublication, citation, or hasPart entries
+        that point to a publication — DOIs, journal URLs, or
+        publication-typed entities.
+
+scoring:
+  "0":
+    label: "Absent"
+    rule: |
+      Neither use cases nor limitations documented; no linked
+      prior analyses.
+  "1":
+    label: "Partial"
+    rule: |
+      Use cases OR limitations described, but not both — or both
+      are present but generic ("for biomedical research") rather
+      than concrete; or no linked prior work.
+  "2":
+    label: "Substantive"
+    rule: |
+      Concrete appropriate use cases AND concrete limitations or
+      inappropriate uses are both documented, with at least one
+      linked prior analysis or originating publication.
+
+output_schema:
+  type: object
+  required: [score, rationale, evidence]
+  additionalProperties: false
+  properties:
+    score:
+      type: integer
+      enum: [0, 1, 2]
+    rationale:
+      type: string
+      description: "1–3 sentences citing the rule that applied."
+    evidence:
+      type: array
+      items: { type: string }
+      description: "Direct quotes or @id refs from the crate that justify the score."
+    gaps:
+      type: array
+      items: { type: string }
+      description: "Specific things missing that would raise the score. Empty if score is 2."

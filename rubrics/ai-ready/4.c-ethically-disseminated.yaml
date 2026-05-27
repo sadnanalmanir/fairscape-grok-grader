@@ -1,0 +1,106 @@
+id: "4.c"
+criterion: "Ethics"
+sub_criterion: "Ethically Disseminated"
+
+practice: |
+  Specify a licensing agreement and/or data use agreement (DUA) on as
+  open terms as ethical and sustainability considerations permit.
+  Specify contact information for a data access committee.
+
+intent: |
+  Terms of use are explicit and machine-discoverable — license or
+  DUA reference, prohibited uses, sensitive-information handling,
+  and a contact for the data access committee. A would-be user can
+  determine permitted use and whom to contact without guesswork.
+
+what_to_look_for:
+  - license — URL or SPDX identifier. Note that the AI-Ready PDF
+    specifically calls out CC0 as inappropriate for biomedical data;
+    the CC-BY family is preferred.
+  - conditionsOfAccess — the DUA / terms-of-use narrative. May
+    fully substitute for a license URL when the data is
+    controlled-access and governed by a Data Use Agreement rather
+    than a public license.
+  - prohibitedUses — explicit out-of-bounds applications.
+  - rai:personalSensitiveInformation — what kinds of sensitive
+    information the data contains.
+  - confidentialityLevel — HL7 confidentiality classification
+    ("normal", "restricted", "very restricted"). Shapes what
+    license / DUA / prohibited-uses combination is appropriate;
+    a "restricted" or "very restricted" classification with no
+    DUA reference is a meaningful gap.
+  - contactEmail — direct contact for access requests or
+    dissemination questions.
+
+extractor_inputs:
+  type: object
+  properties:
+    license_value:
+      type: ["string", "null"]
+      description: license field on the root dataset (URL or SPDX or text)
+    license_is_resolvable:
+      type: boolean
+      description: |
+        true if license_value looks like a URL or recognized SPDX
+        identifier, false if free-text only.
+    license_is_cc0:
+      type: boolean
+      description: |
+        true if license is CC0 — flag because the AI-Ready PDF
+        explicitly recommends against CC0 for biomedical data.
+    conditions_of_access:
+      type: ["string", "null"]
+      description: conditionsOfAccess on the root dataset (the DUA / terms-of-use narrative)
+    prohibited_uses:
+      type: ["string", "null"]
+      description: prohibitedUses on the root dataset
+    rai_personalSensitiveInformation:
+      type: ["string", "null"]
+      description: rai:personalSensitiveInformation on the root dataset
+    confidentiality_level:
+      type: ["string", "null"]
+      description: confidentialityLevel on the root dataset (HL7 code — normal / restricted / very restricted)
+    contact_email:
+      type: ["string", "null"]
+      description: contactEmail on the root dataset
+
+scoring:
+  "0":
+    label: "Absent"
+    rule: |
+      No license, no DUA, and no contact information for access.
+  "1":
+    label: "Partial"
+    rule: |
+      License present but key supporting items missing — no
+      prohibited-uses or sensitive-info disclosure where the data
+      type would warrant it, or no access contact, or license is
+      free-text only without a resolvable reference. CC0 on
+      biomedical data is automatically Partial unless the
+      rationale explicitly addresses the AI-Ready guidance.
+  "2":
+    label: "Substantive"
+    rule: |
+      Resolvable license (URL / SPDX) or DUA reference, prohibited
+      uses and sensitive-information handling stated where
+      applicable, and a clear access contact provided.
+
+output_schema:
+  type: object
+  required: [score, rationale, evidence]
+  additionalProperties: false
+  properties:
+    score:
+      type: integer
+      enum: [0, 1, 2]
+    rationale:
+      type: string
+      description: "1–3 sentences citing the rule that applied."
+    evidence:
+      type: array
+      items: { type: string }
+      description: "Direct quotes or @id refs from the crate that justify the score."
+    gaps:
+      type: array
+      items: { type: string }
+      description: "Specific things missing that would raise the score. Empty if score is 2."

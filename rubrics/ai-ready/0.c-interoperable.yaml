@@ -1,0 +1,124 @@
+id: "0.c"
+criterion: "FAIRness"
+sub_criterion: "Interoperable"
+
+practice: |
+  Wherever possible, provide data and metadata using formally defined
+  specifications for digital objects.
+suggested_resources: ["RDF", "JSON-LD"]
+
+intent: |
+  Both metadata and data use formally defined specifications — JSON-LD
+  for metadata, declared schemas for tabular / structured data, RDF
+  or equivalent for graph content — so other systems can consume
+  them without bespoke parsing.
+
+# DRAFT — heavy overlap with 6.a Standardized, which scores
+# adherence to specific named standards (Croissant, RO-Crate spec,
+# JSON Schema). 0.c is the broader FAIR-baseline cousin: "is the
+# packaging formally specified at all". Reviewer may decide to
+# fold 0.c into 6.a, or keep 0.c as the baseline pre-condition for
+# 6.a's deeper check.
+what_to_look_for:
+  - "@context populated with one or more recognized vocabularies (schema.org, EVI, DCAT, Croissant) — JSON-LD baseline."
+  - Schema entities (@type 'Schema' or 'evi:Schema') for structured
+    Datasets, declaring fields and types.
+  - Data files in formats with a published spec (CSV, Parquet,
+    JSON, JSONL, HDF5, NIfTI, BAM, FASTQ) rather than ad-hoc
+    formats with no spec.
+
+extractor_inputs:
+  type: object
+  properties:
+    context_namespaces:
+      type: array
+      description: values from the @context array of ro-crate-metadata.json
+    schema_count:
+      type: integer
+      description: count of entities whose @type contains 'Schema' (or 'evi:Schema')
+    dataset_count:
+      type: integer
+      description: |
+        TABULAR-SCOPED count of Datasets — entities whose format is a
+        tabular container (CSV, TSV, Parquet, H5AD, JSONL, Arrow,
+        Feather, XLSX, ORC, Avro). Image files, instrument-vendor
+        directories (e.g. `.d`), BAM / FASTQ / NIfTI binaries, audio,
+        and PDFs are NOT counted here — they don't carry a tabular
+        schema and are not the target of this rubric.
+    datasets_with_schema_count:
+      type: integer
+      description: |
+        Of the tabular Datasets above, how many are linked to a Schema
+        entity (via evi:schema, conformsTo, or schema). Use this as the
+        numerator and `dataset_count` as the denominator when judging
+        coverage.
+    dataset_count_all:
+      type: integer
+      description: |
+        Total Dataset count INCLUDING non-tabular files (images, BAMs,
+        instrument outputs, etc.). Provided for context — do NOT use
+        this as the coverage denominator.
+    non_tabular_dataset_count:
+      type: integer
+      description: |
+        How many of the total Datasets are non-tabular (images,
+        instrument-vendor directories, single-record binaries). These
+        are excluded from the coverage ratio because they cannot
+        carry a tabular schema.
+    datasets_with_schema_all_count:
+      type: integer
+      description: |
+        Schema link count across ALL Datasets (including non-tabular).
+        Context only — not the rubric numerator.
+    formats_with_published_spec_count:
+      type: integer
+      description: |
+        count of Datasets whose format has a published, widely-readable
+        specification (CSV, Parquet, JSON, JSONL, HDF5, NIfTI, BAM,
+        FASTQ, Zarr, plus standard image / audio formats).
+
+scoring:
+  "0":
+    label: "Absent"
+    rule: |
+      Metadata @context is minimal or non-standard, no Schema
+      entities, and data formats are unspecified or proprietary
+      with no spec.
+  "1":
+    label: "Partial"
+    rule: |
+      Metadata uses a recognized JSON-LD vocabulary (RO-Crate
+      baseline) but TABULAR Datasets largely lack linked schemas
+      (use `datasets_with_schema_count / dataset_count`), or a
+      meaningful fraction of data files use formats without a
+      published spec.
+  "2":
+    label: "Substantive"
+    rule: |
+      Metadata is in JSON-LD with recognized vocabularies AND
+      substantively all TABULAR Datasets carry linked schemas
+      (`datasets_with_schema_count / dataset_count` covers the
+      tabular set; non-tabular datasets in `non_tabular_dataset_count`
+      are out of scope and do NOT count against coverage) AND data
+      files use formats with published specifications. The FAIR
+      baseline for interoperability is met.
+
+output_schema:
+  type: object
+  required: [score, rationale, evidence]
+  additionalProperties: false
+  properties:
+    score:
+      type: integer
+      enum: [0, 1, 2]
+    rationale:
+      type: string
+      description: "1–3 sentences citing the rule that applied."
+    evidence:
+      type: array
+      items: { type: string }
+      description: "Direct quotes or @id refs from the crate that justify the score."
+    gaps:
+      type: array
+      items: { type: string }
+      description: "Specific things missing that would raise the score. Empty if score is 2."

@@ -1,0 +1,117 @@
+id: "2.c"
+criterion: "Characterization"
+sub_criterion: "Standards"
+
+practice: |
+  Provide a machine-readable data dictionary or schema for each
+  dataset, linked to the dataset metadata, and referencing any
+  relevant standards.
+suggested_resources: ["JSON Schema", "Frictionless Data", "Pydantic"]
+
+intent: |
+  Each structured dataset has a machine-readable schema that names
+  its fields, declares their types, and links from the Dataset's
+  metadata so a tool can discover it programmatically. The schema
+  should reference relevant domain standards where they apply
+  (LOINC, OMOP CDM, GA4GH, etc.) rather than re-inventing field
+  semantics.
+
+what_to_look_for:
+  - Schema entities (@type 'Schema' or 'evi:Schema') in the graph.
+  - Each structured Dataset linked to a Schema (e.g., via evi:schema,
+    conformsTo, or schema).
+  - Schemas referencing established standards in description /
+    conformsTo / namespace fields where applicable.
+  - Coverage — is every tabular / structured Dataset linked to a
+    schema, or only a subset?
+
+extractor_inputs:
+  type: object
+  properties:
+    schema_count:
+      type: integer
+      description: count of entities whose @type contains 'Schema' (or evi:Schema)
+    dataset_count:
+      type: integer
+      description: |
+        TABULAR-SCOPED count of Datasets — only entities whose format
+        is a tabular container (CSV, TSV, Parquet, H5AD, JSONL,
+        Arrow, Feather, XLSX, ORC, Avro). Image files, instrument
+        directories (e.g. `.d`), BAM / FASTQ / NIfTI / audio are
+        excluded — they cannot carry a tabular schema and the rubric
+        only asks about *structured* datasets.
+    datasets_with_schema_count:
+      type: integer
+      description: |
+        Of the tabular Datasets above, how many are linked to a Schema
+        entity (via evi:schema, conformsTo, or schema). Use this as
+        the numerator and `dataset_count` as the denominator when
+        judging coverage.
+    dataset_count_all:
+      type: integer
+      description: |
+        Total Dataset count including non-tabular. Context only — do
+        NOT use as the coverage denominator.
+    non_tabular_dataset_count:
+      type: integer
+      description: |
+        How many Datasets are non-tabular (images, instrument
+        directories, single-record binaries). Excluded from coverage.
+    datasets_with_schema_all_count:
+      type: integer
+      description: |
+        Schema link count across ALL Datasets (including non-tabular).
+        Context only — not the rubric numerator.
+    schemas_referencing_standards_count:
+      type: integer
+      description: |
+        count of Schema entities whose conformsTo, description, or
+        namespace mentions a recognized standard (LOINC, OMOP, GA4GH,
+        Frictionless, JSON Schema draft, etc.).
+    schema_samples:
+      type: array
+      description: up to 5 Schema entity dicts including conformsTo, description, properties summary
+
+scoring:
+  "0":
+    label: "Absent"
+    rule: |
+      No Schema entities, or no Datasets are linked to schemas.
+  "1":
+    label: "Partial"
+    rule: |
+      Schemas exist but TABULAR coverage is uneven (use
+      `datasets_with_schema_count / dataset_count` — both are
+      tabular-scoped) or schemas don't reference recognized standards
+      where they reasonably could. Do NOT penalize for non-tabular
+      datasets (images, BAMs, instrument directories) lacking a
+      tabular schema — those are out of scope; see
+      `non_tabular_dataset_count`.
+  "2":
+    label: "Substantive"
+    rule: |
+      Substantively all TABULAR Datasets are linked to a
+      machine-readable schema (judge via
+      `datasets_with_schema_count / dataset_count`), with relevant
+      standards referenced where applicable. Non-tabular datasets do
+      not count against coverage.
+
+output_schema:
+  type: object
+  required: [score, rationale, evidence]
+  additionalProperties: false
+  properties:
+    score:
+      type: integer
+      enum: [0, 1, 2]
+    rationale:
+      type: string
+      description: "1–3 sentences citing the rule that applied."
+    evidence:
+      type: array
+      items: { type: string }
+      description: "Direct quotes or @id refs from the crate that justify the score."
+    gaps:
+      type: array
+      items: { type: string }
+      description: "Specific things missing that would raise the score. Empty if score is 2."

@@ -1,0 +1,63 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "fairscape-grok-grader"
+version = "0.1.0"
+description = "Grok-native AI-Ready rubric grader for FAIRSCAPE RO-Crates — uses xAI Grok models and Grok skills/agents instead of Claude"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Sadnan Al Manir", email = "sadnan@virginia.edu"},
+]
+keywords = ["FAIRSCAPE", "RO-Crate", "AI-Ready", "rubrics", "Grok", "xAI", "grading", "provenance"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
+
+dependencies = [
+    "pydantic>=2.0",
+    "pyyaml",
+    "rich",
+    "openai>=1.0",  # for xAI Grok API (OpenAI-compatible)
+]
+
+[project.optional-dependencies]
+full = [
+    "fairscape-wizard>=0.2.0",
+    "fairscape-models",
+    "fairscape-cli",
+]
+dev = [
+    "pytest",
+    "ruff",
+]
+
+[project.scripts]
+fairscape-grok = "fairscape_grok_grader.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/sadnanalmanir/fairscape-grok-grader"
+Repository = "https://github.com/sadnanalmanir/fairscape-grok-grader"
+Issues = "https://github.com/sadnanalmanir/fairscape-grok-grader/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/fairscape_grok_grader"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/",
+    "rubrics/",
+    "skills/",
+    "README.md",
+    "LICENSE",
+]

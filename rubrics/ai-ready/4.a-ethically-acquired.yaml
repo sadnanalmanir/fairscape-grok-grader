@@ -1,0 +1,120 @@
+id: "4.a"
+criterion: "Ethics"
+sub_criterion: "Ethically Acquired"
+
+practice: |
+  Describe ethical data acquisition consistent with accepted
+  principles (e.g., Belmont Report, Menlo Report, CARE Principles)
+  sufficient to evaluate for intended use, along with a management
+  plan.
+suggested_resources: ["Belmont Report", "Menlo Report", "CARE Principles"]
+
+intent: |
+  A reader can evaluate whether the data was acquired ethically for
+  the use they have in mind — the collection process is described,
+  the governing principles are named, and IRB / consent / equivalent
+  authorization is referenced. The bar is "sufficient to evaluate",
+  not exhaustive disclosure.
+
+what_to_look_for:
+  - rai:dataCollection narrative describing how data was obtained.
+  - ethicalReview narrative — text describing the ethical-review
+    process, IRB body, or governing framework applied to the
+    dataset's acquisition.
+  - Human Subject Research declaration (humanSubjectResearch field
+    or additionalProperty named 'Human Subject Research').
+  - informedConsent — whether subjects consented and what the
+    consent covered. Required signal for human-subjects data;
+    absence is a meaningful gap.
+  - atRiskPopulations — any protected, vulnerable, or at-risk
+    populations represented (children, prisoners, indigenous
+    communities, etc.). Either a populated list or an explicit
+    "none" is informative; silence is not.
+  - Reference to governing ethical framework — Belmont Report,
+    Menlo Report, CARE Principles, GDPR, HIPAA, indigenous data
+    sovereignty, etc., where applicable to the data type.
+  - IRB approval, consent reference, or equivalent authorization
+    (number, document link, protocol ID).
+  - A management plan — what happens to the data through its
+    lifecycle, who controls it.
+
+extractor_inputs:
+  type: object
+  properties:
+    rai_dataCollection:
+      type: ["string", "null"]
+      description: value of rai:dataCollection on the root dataset
+    human_subject_research_value:
+      type: ["string", "boolean", "null"]
+      description: |
+        humanSubjectResearch field, or additionalProperty whose name
+        matches 'Human Subject Research' (or similar).
+    ethical_review_text:
+      type: ["string", "null"]
+      description: |
+        ethicalReview field on the root dataset — narrative describing
+        the ethical-review process, IRB body, or governing framework
+        applied to the dataset's acquisition.
+    informed_consent:
+      type: ["string", "boolean", "null"]
+      description: |
+        informedConsent field on the root dataset — describes whether
+        and how subjects gave informed consent (true / false / narrative
+        on the consent process or scope).
+    at_risk_populations:
+      type: ["string", "array", "null"]
+      description: |
+        atRiskPopulations field on the root dataset — names any
+        protected, vulnerable, or at-risk populations represented in
+        the data (e.g., children, prisoners, indigenous communities)
+        so the grader can weigh acquisition ethics accordingly.
+    irb_or_consent_references:
+      type: array
+      description: |
+        IRB numbers, consent document references, or protocol IDs
+        found in narrative or additionalProperty entries.
+    management_plan_text:
+      type: ["string", "null"]
+      description: |
+        rai:dataReleaseMaintenancePlan, or any narrative explicitly
+        labeled as a management / lifecycle plan.
+
+scoring:
+  "0":
+    label: "Absent"
+    rule: |
+      No description of how the data was acquired and no reference
+      to ethical framework, IRB, or consent.
+  "1":
+    label: "Partial"
+    rule: |
+      Acquisition described in general terms, but missing one or
+      more of — named ethical framework, IRB / consent reference,
+      or management plan — that would let a reviewer evaluate the
+      acquisition for their intended use.
+  "2":
+    label: "Substantive"
+    rule: |
+      Acquisition narrative is sufficient to evaluate ethical fit —
+      framework named, authorization referenced, and a management
+      plan is documented.
+
+output_schema:
+  type: object
+  required: [score, rationale, evidence]
+  additionalProperties: false
+  properties:
+    score:
+      type: integer
+      enum: [0, 1, 2]
+    rationale:
+      type: string
+      description: "1–3 sentences citing the rule that applied."
+    evidence:
+      type: array
+      items: { type: string }
+      description: "Direct quotes or @id refs from the crate that justify the score."
+    gaps:
+      type: array
+      items: { type: string }
+      description: "Specific things missing that would raise the score. Empty if score is 2."

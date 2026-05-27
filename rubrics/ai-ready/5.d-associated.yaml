@@ -1,0 +1,98 @@
+id: "5.d"
+criterion: "Sustainability"
+sub_criterion: "Associated"
+
+practice: |
+  Document project-level connections between data components and
+  elements in a machine-readable manner.
+suggested_resources: ["RO-Crate"]
+
+intent: |
+  The relationships among datasets, software, computations, samples,
+  instruments, and sub-crates are explicitly modeled in the graph —
+  hasPart, isPartOf, wasGeneratedBy, wasDerivedFrom, evi:usedSoftware,
+  evi:usedSample — so a tool can walk the connections without parsing
+  prose. Project-level structure is discoverable.
+
+  Note: an RO-Crate by construction provides hasPart linkage; the
+  rubric looks for connection density beyond the bare minimum.
+
+what_to_look_for:
+  - hasPart chain on the root linking to major components.
+  - wasGeneratedBy / wasDerivedFrom / derivedFrom edges connecting
+    derived Datasets back to their inputs.
+  - evi:usedSoftware / evi:usedSample / evi:usedInstrument on
+    Computation entities.
+  - Sub-crate references (release-of-crates pattern) where the
+    project bundles multiple sub-crates.
+  - Coverage — a non-trivial fraction of entities participate in
+    these relationships, not just the root and a flat file list.
+
+extractor_inputs:
+  type: object
+  properties:
+    total_entities:
+      type: integer
+      description: total entity count (excluding ro-crate-metadata.json itself)
+    root_haspart_count:
+      type: integer
+      description: number of entries in the root dataset's hasPart array
+    entities_with_provenance_link_count:
+      type: integer
+      description: |
+        count of entities with at least one of — wasGeneratedBy,
+        wasDerivedFrom, derivedFrom, isPartOf, evi:usedSoftware,
+        evi:usedSample, evi:usedInstrument.
+    subcrate_count:
+      type: integer
+      description: |
+        count of sub-crate references — entities whose @type
+        includes 'ROCrate' or that point to a nested
+        ro-crate-metadata.json.
+    provenance_link_density:
+      type: ["number", "null"]
+      description: |
+        entities_with_provenance_link_count / total_entities, or
+        null if total_entities is 0.
+
+scoring:
+  "0":
+    label: "Absent"
+    rule: |
+      No machine-readable connections beyond the bare hasPart of
+      the root — flat file list with no derivedFrom / generatedBy
+      / used* edges anywhere.
+  "1":
+    label: "Partial"
+    rule: |
+      Some provenance edges exist but coverage is thin — a fraction
+      of entities participate in the graph and the rest are
+      orphaned, or sub-crates exist but aren't tied back to the
+      release crate.
+  "2":
+    label: "Substantive"
+    rule: |
+      Components are densely connected via wasGeneratedBy /
+      derivedFrom / used* edges, sub-crates (if any) are linked
+      from the parent, and a tool can walk the graph from root to
+      raw inputs without dead ends.
+
+output_schema:
+  type: object
+  required: [score, rationale, evidence]
+  additionalProperties: false
+  properties:
+    score:
+      type: integer
+      enum: [0, 1, 2]
+    rationale:
+      type: string
+      description: "1–3 sentences citing the rule that applied."
+    evidence:
+      type: array
+      items: { type: string }
+      description: "Direct quotes or @id refs from the crate that justify the score."
+    gaps:
+      type: array
+      items: { type: string }
+      description: "Specific things missing that would raise the score. Empty if score is 2."

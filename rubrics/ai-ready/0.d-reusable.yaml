@@ -1,0 +1,89 @@
+id: "0.d"
+criterion: "FAIRness"
+sub_criterion: "Reusable"
+
+practice: |
+  Attach a clear and accessible data usage license that allows the
+  responsible use of AI/ML applications or link to a Data Use
+  Agreement (DUA).
+suggested_resources: ["Creative Commons licenses (other than CC0)"]
+
+intent: |
+  A would-be reuser can determine, from the metadata alone, the
+  legal terms under which they may use the data. Either a clear
+  license (Creative Commons family, SPDX-identified, or equivalent)
+  or a Data Use Agreement narrative that defines reuse terms — and
+  in the biomedical context, the AI-Ready PDF specifically cautions
+  against CC0 because it does not preserve attribution or downstream
+  responsibility.
+
+# DRAFT — overlaps substantively with 4.c Ethically Disseminated,
+# which evaluates the same license / conditionsOfAccess /
+# prohibitedUses fields under the ethics frame. 0.d is the FAIR
+# baseline ("is reuse legally defined?"); 4.c is the ethics depth
+# check ("are reuse terms appropriate to the data sensitivity?").
+# Reviewer may decide to consolidate or keep paired. Same evidence,
+# different bar.
+what_to_look_for:
+  - license — URL or SPDX identifier. CC-BY family preferred.
+    CC0 is flagged by the AI-Ready PDF as inappropriate for
+    biomedical data; treat its presence as a baseline issue
+    unless rationale is given.
+  - conditionsOfAccess — a DUA narrative may stand in for a
+    license URL when data is controlled-access.
+  - The terms are concrete enough that a reuser can identify
+    permitted and prohibited uses without contacting the
+    publisher.
+
+extractor_inputs:
+  type: object
+  properties:
+    license_value:
+      type: ["string", "null"]
+      description: license field on the root dataset (URL or SPDX or text)
+    conditions_of_access:
+      type: ["string", "null"]
+      description: conditionsOfAccess on the root dataset (DUA / terms-of-use narrative)
+    prohibited_uses:
+      type: ["string", "null"]
+      description: prohibitedUses on the root dataset
+
+scoring:
+  "0":
+    label: "Absent"
+    rule: |
+      No license, no DUA narrative — reuse terms are undefined.
+  "1":
+    label: "Partial"
+    rule: |
+      License is present but free-text only with no resolvable
+      reference, OR license is CC0 on biomedical data with no
+      rationale, OR a DUA narrative exists but doesn't specify
+      reuse terms concretely enough to guide a reuser.
+  "2":
+    label: "Substantive"
+    rule: |
+      A resolvable license (URL or SPDX identifier) — preferably
+      CC-BY family for biomedical data — OR a DUA narrative that
+      defines reuse terms concretely. The FAIR baseline for
+      reusability is met.
+
+output_schema:
+  type: object
+  required: [score, rationale, evidence]
+  additionalProperties: false
+  properties:
+    score:
+      type: integer
+      enum: [0, 1, 2]
+    rationale:
+      type: string
+      description: "1–3 sentences citing the rule that applied."
+    evidence:
+      type: array
+      items: { type: string }
+      description: "Direct quotes or @id refs from the crate that justify the score."
+    gaps:
+      type: array
+      items: { type: string }
+      description: "Specific things missing that would raise the score. Empty if score is 2."

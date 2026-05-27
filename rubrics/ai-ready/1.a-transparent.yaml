@@ -1,0 +1,105 @@
+id: "1.a"
+criterion: "Provenance"
+sub_criterion: "Transparent"
+
+practice: |
+  Identify data sources traceable to a reasonable ground truth, e.g.,
+  clinical data from EHR at a given hospital, clinical trials, or
+  laboratory data.
+suggested_resources: ["OMOP", "RRID"]
+
+intent: |
+  A reader should be able to follow each major dataset back to a
+  specific real-world origin — a named institution, instrument, cohort,
+  registry, or public source — rather than a generic category. The goal
+  is resolvability: someone unfamiliar with the project can identify
+  *which* EHR, *which* lab, *which* trial.
+
+what_to_look_for:
+  - Named source institution, hospital, lab, or consortium on Dataset entities
+    (e.g., sourceOrganization, provider, or narrative description).
+  - Resolvable source identifiers — RRID, OMOP-mapped EHR, registry IDs,
+    public dataset DOIs, accession numbers (GEO, dbGaP, SRA, etc.).
+  - Linked Experiment / Instrument / Sample entities that themselves
+    point back to a concrete origin.
+  - Description text on the root dataset specific enough to disambiguate
+    (e.g., "T2D cohort recruited at UVA Health 2020–2022" vs "EHR data").
+
+# The Python extractor produces an object of this shape and passes it to
+# the LLM grader as "facts". Aggregation across sub-crates is the
+# extractor's responsibility; the LLM sees the merged view.
+#
+# Gap vs. current AIReady.py: today only dataset_count is computed for
+# this criterion, which makes scoring near-trivial. The extractor needs
+# to also surface experiment / instrument / computation entities (so
+# Provenance has more than one signal) and at least sample Dataset
+# bodies so the LLM can read source narrative.
+extractor_inputs:
+  type: object
+  properties:
+    dataset_count:
+      type: integer
+      description: count of entities whose @type contains 'Dataset' (root crate excluded)
+    experiment_count:
+      type: integer
+      description: count of entities whose @type contains 'Experiment'
+    instrument_count:
+      type: integer
+      description: count of entities whose @type contains 'Instrument'
+    computation_count:
+      type: integer
+      description: count of entities whose @type contains 'Computation'
+    software_count:
+      type: integer
+      description: count of entities whose @type contains 'Software'
+    dataset_samples:
+      type: array
+      description: |
+        Up to 10 input Dataset entity dicts. Include @id, name, description.
+    root_description:
+      type: string
+      description: root dataset 'description' text
+    root_keywords:
+      type: array
+      description: root dataset 'keywords' array
+
+scoring:
+  "0":
+    label: "Absent"
+    rule: |
+      No major dataset names a source, or sources are unidentifiable
+      from the metadata.
+  "1":
+    label: "Partial"
+    rule: |
+      Sources are mentioned but at a generic level (e.g., "EHR data",
+      "public proteomics dataset") with no specific institution,
+      instrument, registry, or identifier that would let a reader
+      resolve to a concrete origin. Or: only some datasets are sourced.
+  "2":
+    label: "Substantive"
+    rule: |
+      For substantively all major datasets, sources resolve to a
+      specific origin: named institution + cohort, RRID, OMOP-mapped
+      EHR, public dataset DOI, accession number, or equivalent.
+
+# What the LLM grader returns. Identical schema across all rubrics.
+output_schema:
+  type: object
+  required: [score, rationale, evidence]
+  additionalProperties: false
+  properties:
+    score:
+      type: integer
+      enum: [0, 1, 2]
+    rationale:
+      type: string
+      description: "1–3 sentences citing the rule that applied."
+    evidence:
+      type: array
+      items: { type: string }
+      description: "Direct quotes or @id refs from the crate that justify the score."
+    gaps:
+      type: array
+      items: { type: string }
+      description: "Specific things missing that would raise the score. Empty if score is 2."

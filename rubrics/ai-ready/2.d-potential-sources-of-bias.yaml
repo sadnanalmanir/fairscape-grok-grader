@@ -1,0 +1,91 @@
+id: "2.d"
+criterion: "Characterization"
+sub_criterion: "Potential Sources of Bias"
+
+practice: |
+  Describe known sources of bias in the data and assumptions made in
+  collecting, processing, or interpreting the data. Include any known
+  explanations regarding missing values, including reasons for
+  missingness, and the degree to which data represents a state vs. a
+  control (e.g., disease state vs. healthy state).
+suggested_resources: ["Croissant RAI"]
+
+intent: |
+  A reader can understand what biases and assumptions shape this
+  dataset before modeling against it. This is about *describing*
+  biases and assumptions — not about whether biases exist. Class
+  imbalance, demographic skew, instrument-specific quirks, and
+  state-vs-control composition can all be legitimate features of the
+  underlying biology or study design; the rubric rewards transparency
+  about them, not their absence.
+
+what_to_look_for:
+  # The grader sees only the two narrative fields below (see
+  # extractor_inputs). Hints are about *content* of those fields.
+  - rai:dataBiases content — known biases named with specifics
+    (selection, measurement, demographic, temporal, etc.) and any
+    processing/interpretation assumptions called out.
+  - rai:dataCollectionMissingData content — reasons for missingness
+    (not just an encoding convention), mechanism if known
+    (MCAR/MAR/MNAR), and case/control or state composition where
+    relevant.
+  - Empty, "N/A", or one-line generic content counts as Partial at
+    best, regardless of which field it appears in.
+
+# The Python extractor passes only these two narrative fields. Per
+# scope decision: keep input minimal so the LLM grades the description
+# itself rather than scanning the whole crate. If real crates show that
+# bias content is being placed elsewhere (e.g., per-Dataset description
+# fields), revisit and broaden the extractor.
+extractor_inputs:
+  type: object
+  properties:
+    rai_dataBiases:
+      type: ["string", "null"]
+      description: value of rai:dataBiases on the root dataset (null if absent)
+    rai_dataCollectionMissingData:
+      type: ["string", "null"]
+      description: value of rai:dataCollectionMissingData on the root dataset (null if absent)
+
+scoring:
+  "0":
+    label: "Absent"
+    rule: |
+      No bias description, no missing-data discussion, no
+      case/control commentary anywhere in the metadata.
+  "1":
+    label: "Partial"
+    rule: |
+      Some bias-related content exists but is generic or covers only
+      one facet (e.g., a one-line "selection bias possible" with no
+      detail; or missing-data convention noted but no reasons given;
+      or cohort described but no biases discussed).
+  "2":
+    label: "Substantive"
+    rule: |
+      Bias and assumption description covers the major facets relevant
+      to this dataset: known biases with specifics, missing-data
+      reasons (not just encoding), and case/control or composition
+      context where applicable. A modeler reading this would know
+      what to watch for.
+
+# What the LLM grader returns. Identical schema across all rubrics.
+output_schema:
+  type: object
+  required: [score, rationale, evidence]
+  additionalProperties: false
+  properties:
+    score:
+      type: integer
+      enum: [0, 1, 2]
+    rationale:
+      type: string
+      description: "1–3 sentences citing the rule that applied."
+    evidence:
+      type: array
+      items: { type: string }
+      description: "Direct quotes or @id refs from the crate that justify the score."
+    gaps:
+      type: array
+      items: { type: string }
+      description: "Specific things missing that would raise the score. Empty if score is 2."

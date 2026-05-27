@@ -1,0 +1,102 @@
+id: "3.a"
+criterion: "Pre-model Explainability"
+sub_criterion: "Data Documentation Template"
+
+practice: |
+  Machine-readable metadata and a linked human-readable document
+  should support a domain-appropriate extension of the original Gebru
+  Datasheets concept for pre-model explainability, as detailed in the
+  present article. Healthsheets information may be a helpful
+  supplement.
+suggested_resources: ["Datasheets", "Healthsheets"]
+
+intent: |
+  The crate plays the role of a Datasheet for Datasets — a reader
+  finds answers to the canonical Datasheet questions (motivation,
+  composition, collection, preprocessing, uses, distribution,
+  maintenance) in a machine-readable form, ideally backed by a
+  human-readable document so a non-technical reviewer can also follow
+  along.
+
+what_to_look_for:
+  - A linked human-readable datasheet — HTML, PDF, or Markdown — as
+    a hasPart entity, contentUrl, or associatedDocumentation.
+  - Population of machine-readable fields covering each canonical
+    Datasheet section — rai:dataCollection (collection),
+    rai:dataUseCases (uses), rai:dataLimitations (limitations),
+    rai:dataBiases (composition / bias),
+    rai:dataReleaseMaintenancePlan (maintenance), license + DUA
+    (distribution).
+  - Healthsheet-style additions where applicable (consent scope,
+    population characteristics, clinical context).
+  - The human and machine views agree — the linked document covers
+    the same ground the metadata claims.
+
+extractor_inputs:
+  type: object
+  properties:
+    has_human_readable_datasheet:
+      type: boolean
+      description: |
+        true if any entity acts as a datasheet — name / description
+        contains 'datasheet' or 'data sheet', or @type contains
+        'CreativeWork'/'Document' with format pdf/html/md and a
+        descriptive name.
+    datasheet_entity:
+      type: ["object", "null"]
+      description: full dict of the candidate datasheet entity, if any
+    populated_section_fields:
+      type: object
+      description: |
+        boolean per canonical section field — keys are
+        rai_dataCollection, rai_dataUseCases, rai_dataLimitations,
+        rai_dataBiases, rai_dataReleaseMaintenancePlan, license, dua.
+    populated_section_count:
+      type: integer
+      description: how many of those section fields are non-empty
+    healthsheet_fields_present:
+      type: array
+      description: |
+        names of any healthsheet-style fields found (consent scope,
+        population, clinical context fields, etc.).
+
+scoring:
+  "0":
+    label: "Absent"
+    rule: |
+      No human-readable datasheet linked, and the machine-readable
+      datasheet sections are mostly empty.
+  "1":
+    label: "Partial"
+    rule: |
+      Either a datasheet document is linked but the
+      machine-readable fields are sparse, or the machine-readable
+      fields are populated but no human-readable datasheet is
+      linked. Or coverage is uneven — some canonical sections
+      filled, others blank.
+  "2":
+    label: "Substantive"
+    rule: |
+      A human-readable datasheet is linked AND the canonical
+      Datasheet sections are populated in the machine-readable
+      metadata, with the two views consistent.
+
+output_schema:
+  type: object
+  required: [score, rationale, evidence]
+  additionalProperties: false
+  properties:
+    score:
+      type: integer
+      enum: [0, 1, 2]
+    rationale:
+      type: string
+      description: "1–3 sentences citing the rule that applied."
+    evidence:
+      type: array
+      items: { type: string }
+      description: "Direct quotes or @id refs from the crate that justify the score."
+    gaps:
+      type: array
+      items: { type: string }
+      description: "Specific things missing that would raise the score. Empty if score is 2."

@@ -1,0 +1,92 @@
+id: "2.e"
+criterion: "Characterization"
+sub_criterion: "Data Quality"
+
+practice: |
+  Have quality control procedures been applied? If so, provide a
+  link to a description.
+
+intent: |
+  A reader can tell that quality control was applied and what was
+  filtered or flagged, with enough detail to evaluate whether the
+  QC procedures fit their intended use. The grader sees only the
+  two RAI narrative fields that describe collection and missing
+  data — this is the QC angle on those narratives, distinct from
+  2.d (Bias / missing-data reasons), which reads the same field
+  for representational bias rather than QC procedure detail.
+
+what_to_look_for:
+  # The grader sees only the two RAI narrative fields below (see
+  # extractor_inputs). Hints describe what content within those
+  # fields would meet the QC criterion.
+  - rai:dataCollection content — whether QC steps are described as
+    part of collection (instrument-level checks, validation,
+    curation, sample acceptance criteria), with enough specificity
+    that a reader can tell what was checked.
+  - rai:dataCollectionMissingData content — whether missingness is
+    framed as a QC outcome (samples / records excluded for failing
+    a quality threshold), with the threshold or criterion stated
+    rather than implied.
+  - Resolvable references inside either field — a URL or DOI to a
+    QC procedure document, or a named tool with version — raise
+    the score.
+  - Empty, "N/A", or one-line generic content ("standard QC was
+    applied") counts as Partial at best.
+
+# The extractor passes only the two RAI narrative fields. This is
+# narrower than the full PDF intent, which also envisions QC
+# procedures captured as Computation entities and / or linked
+# external documents. Flagged as a small gap to revisit — if real
+# crates place QC content elsewhere (per-Dataset descriptions,
+# dedicated QC Computations), broaden the input contract then.
+extractor_inputs:
+  type: object
+  properties:
+    rai_dataCollection:
+      type: ["string", "null"]
+      description: value of rai:dataCollection on the root dataset (null if absent)
+    rai_dataCollectionMissingData:
+      type: ["string", "null"]
+      description: value of rai:dataCollectionMissingData on the root dataset (null if absent)
+
+scoring:
+  "0":
+    label: "Absent"
+    rule: |
+      Neither field has content, or both are empty / "N/A" — no QC
+      information discoverable from the inputs.
+  "1":
+    label: "Partial"
+    rule: |
+      QC is mentioned in one or both fields but generically —
+      "standard QC was applied", "data was quality-checked" — with
+      no specific procedures, criteria, thresholds, or references
+      a reader could follow up on.
+  "2":
+    label: "Substantive"
+    rule: |
+      QC procedures, criteria, or thresholds are described
+      concretely in rai:dataCollection and / or
+      rai:dataCollectionMissingData — what was checked, what
+      passed / failed, with named tools or a resolvable reference
+      to a procedure document where applicable.
+
+output_schema:
+  type: object
+  required: [score, rationale, evidence]
+  additionalProperties: false
+  properties:
+    score:
+      type: integer
+      enum: [0, 1, 2]
+    rationale:
+      type: string
+      description: "1–3 sentences citing the rule that applied."
+    evidence:
+      type: array
+      items: { type: string }
+      description: "Direct quotes or @id refs from the crate that justify the score."
+    gaps:
+      type: array
+      items: { type: string }
+      description: "Specific things missing that would raise the score. Empty if score is 2."

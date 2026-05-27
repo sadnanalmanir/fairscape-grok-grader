@@ -1,0 +1,91 @@
+id: "0.b"
+criterion: "FAIRness"
+sub_criterion: "Accessible"
+
+practice: |
+  Descriptive metadata should always be available and accessible,
+  even if the dataset is restricted, unavailable, or de-accessioned.
+  Ensure metadata conforms to standards such as DCAT (Data Catalog
+  Vocabulary) or schema.org.
+suggested_resources: ["DCAT", "schema.org"]
+
+intent: |
+  Metadata about the dataset is publicly resolvable in a standard
+  vocabulary, separate from any restrictions on the data itself.
+  A would-be user can read what the dataset is, who governs it, and
+  how to request access — even when they can't yet read the bytes.
+
+# DRAFT — RO-Crate satisfies the structural side of this almost by
+# construction (JSON-LD + schema.org). The interesting axis is the
+# *separation* of metadata accessibility from data accessibility,
+# which becomes meaningful when confidentialityLevel is restricted.
+# Overlaps with 6.a Standardized (vocabulary conformance) and 4.d
+# Secure (access classification). Reviewer may decide to drop or
+# reframe; left in as a baseline check.
+what_to_look_for:
+  - Metadata in JSON-LD using a standard vocabulary — schema.org,
+    DCAT, EVI — discoverable from @context.
+  - The metadata file (ro-crate-metadata.json) itself is intended
+    to be publicly resolvable, even when the data is controlled.
+  - confidentialityLevel and conditionsOfAccess in combination
+    make explicit that metadata is open while data may be gated.
+
+extractor_inputs:
+  type: object
+  properties:
+    context_namespaces:
+      type: array
+      description: values from the @context array of ro-crate-metadata.json
+    recognized_vocabularies:
+      type: array
+      description: |
+        recognized standard vocabularies detected in @context —
+        schema.org, DCAT, EVI, Croissant, etc.
+    confidentiality_level:
+      type: ["string", "null"]
+      description: confidentialityLevel on the root dataset
+    conditions_of_access:
+      type: ["string", "null"]
+      description: conditionsOfAccess on the root dataset
+
+scoring:
+  "0":
+    label: "Absent"
+    rule: |
+      Metadata uses no recognized vocabulary, or @context is missing
+      / non-standard. (Unlikely for a valid RO-Crate.)
+  "1":
+    label: "Partial"
+    rule: |
+      Metadata uses a standard vocabulary but the dataset is
+      controlled-access and metadata-vs-data accessibility is not
+      explicitly differentiated — a reader cannot tell whether
+      the metadata is intended to remain available if the data
+      becomes restricted or de-accessioned.
+  "2":
+    label: "Substantive"
+    rule: |
+      Metadata is in a recognized standard vocabulary, AND for
+      controlled / restricted data the access policy makes clear
+      that descriptive metadata remains open. Public datasets
+      automatically meet this once the vocabulary check passes.
+
+output_schema:
+  type: object
+  required: [score, rationale, evidence]
+  additionalProperties: false
+  properties:
+    score:
+      type: integer
+      enum: [0, 1, 2]
+    rationale:
+      type: string
+      description: "1–3 sentences citing the rule that applied."
+    evidence:
+      type: array
+      items: { type: string }
+      description: "Direct quotes or @id refs from the crate that justify the score."
+    gaps:
+      type: array
+      items: { type: string }
+      description: "Specific things missing that would raise the score. Empty if score is 2."

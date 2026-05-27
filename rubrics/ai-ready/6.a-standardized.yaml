@@ -1,0 +1,94 @@
+id: "6.a"
+criterion: "Computability"
+sub_criterion: "Standardized"
+
+practice: |
+  Datasets adhere to established, documented standards, including
+  metadata standards, and their adherence can be validated
+  deterministically.
+suggested_resources: ["Croissant", "Croissant Responsible AI"]
+
+intent: |
+  The crate declares which standards it conforms to and uses
+  vocabularies that allow deterministic validation — RO-Crate 1.2,
+  Croissant, Schema.org, JSON-LD, EVI. A tool can run a validator
+  against the metadata and return pass/fail, not a subjective read.
+
+what_to_look_for:
+  - conformsTo on the root and / or sub-crates pointing at
+    published standards (RO-Crate spec URL, Croissant spec, etc.).
+  - "@context using standard vocabularies (schema.org, EVI, Croissant)."
+  - Dataset entities referencing schema standards (Frictionless
+    Data, JSON Schema draft IDs) via Schema entities.
+  - A validation report or claim of conformance — even a comment
+    line referencing which validator was run.
+
+extractor_inputs:
+  type: object
+  properties:
+    root_conformsTo:
+      type: array
+      description: conformsTo entries on the root dataset (URLs / @id refs)
+    context_namespaces:
+      type: array
+      description: |
+        the @context array values from ro-crate-metadata.json —
+        recognized vocab namespaces will be detected.
+    recognized_standards:
+      type: array
+      description: |
+        list of standards detected across conformsTo / context /
+        Schema entities — RO-Crate spec, Croissant, Schema.org,
+        EVI, Frictionless, JSON Schema, etc.
+    schemas_referencing_standards_count:
+      type: integer
+      description: count of Schema entities referencing recognized standards
+    validation_report_present:
+      type: boolean
+      description: |
+        true if any entity claims successful validation against a
+        standard (e.g., a CreativeWork named like 'validation
+        report' or a property like ro_crate:validationStatus).
+
+scoring:
+  "0":
+    label: "Absent"
+    rule: |
+      No conformsTo declarations, no recognized vocabulary
+      namespaces beyond minimal RO-Crate boilerplate, no schema
+      standard references.
+  "1":
+    label: "Partial"
+    rule: |
+      RO-Crate conformsTo declared (which is the baseline a crate
+      gets for free) but no further standards referenced —
+      Croissant absent where it would apply, schemas don't
+      reference recognized validation standards.
+  "2":
+    label: "Substantive"
+    rule: |
+      Multiple standards declared — RO-Crate plus Croissant
+      and / or schema-validation standards on Schema entities — and
+      ideally a validation claim or report present. Conformance
+      can be checked deterministically by a tool reading the
+      metadata.
+
+output_schema:
+  type: object
+  required: [score, rationale, evidence]
+  additionalProperties: false
+  properties:
+    score:
+      type: integer
+      enum: [0, 1, 2]
+    rationale:
+      type: string
+      description: "1–3 sentences citing the rule that applied."
+    evidence:
+      type: array
+      items: { type: string }
+      description: "Direct quotes or @id refs from the crate that justify the score."
+    gaps:
+      type: array
+      items: { type: string }
+      description: "Specific things missing that would raise the score. Empty if score is 2."

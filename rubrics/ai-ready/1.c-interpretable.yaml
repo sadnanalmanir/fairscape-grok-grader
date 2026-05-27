@@ -1,0 +1,91 @@
+id: "1.c"
+criterion: "Provenance"
+sub_criterion: "Interpretable"
+
+practice: |
+  Make software for key data transformation and analysis steps
+  available in a sustainable repository.
+suggested_resources: ["Zenodo", "Software Heritage", "GitHub"]
+
+intent: |
+  The software referenced in the provenance is actually obtainable.
+  A reader can resolve each Software entity to a real artifact —
+  ideally in a sustainable archive (Zenodo, Software Heritage) where
+  it remains reachable years later, rather than only on a personal
+  GitHub that may disappear.
+
+what_to_look_for:
+  - Each Software entity has a resolvable URL or PID
+    (Zenodo DOI, Software Heritage SWHID, GitHub URL, container ref).
+  - Sustainable archives (Zenodo, Software Heritage, package
+    registries with version pinning) preferred over plain GitHub
+    URLs alone.
+  - Version information present (versionTag, version, git commit,
+    or a DOI that pins a release).
+
+extractor_inputs:
+  type: object
+  properties:
+    software_count:
+      type: integer
+      description: count of entities whose @type contains 'Software'
+    software_with_link_count:
+      type: integer
+      description: |
+        count of Software entities with a resolvable URL on @id, url,
+        codeRepository, or contentUrl.
+    software_in_sustainable_archive_count:
+      type: integer
+      description: |
+        subset of the above whose link points to zenodo.org,
+        archive.softwareheritage.org, or another long-term archive
+        (not plain github.com / gitlab.com / personal sites).
+    software_with_version_count:
+      type: integer
+      description: count of Software entities with version, versionTag, or a release-pinning DOI
+    software_samples:
+      type: array
+      description: |
+        Up to 10 Software entity dicts. Include @id, name, url,
+        codeRepository, version.
+
+scoring:
+  "0":
+    label: "Absent"
+    rule: |
+      No Software entities, or none carry a resolvable link or
+      version reference.
+  "1":
+    label: "Partial"
+    rule: |
+      Software is linked but the references are fragile — plain
+      GitHub URLs without commit/tag pinning, broken or
+      personal-account-only hosts, or partial coverage where some
+      software steps have no link at all.
+  "2":
+    label: "Substantive"
+    rule: |
+      Substantively all referenced Software resolves to a versioned
+      artifact, with the bulk in sustainable archives (Zenodo,
+      Software Heritage) or release-pinned (DOI / git tag / package
+      version).
+
+output_schema:
+  type: object
+  required: [score, rationale, evidence]
+  additionalProperties: false
+  properties:
+    score:
+      type: integer
+      enum: [0, 1, 2]
+    rationale:
+      type: string
+      description: "1–3 sentences citing the rule that applied."
+    evidence:
+      type: array
+      items: { type: string }
+      description: "Direct quotes or @id refs from the crate that justify the score."
+    gaps:
+      type: array
+      items: { type: string }
+      description: "Specific things missing that would raise the score. Empty if score is 2."

@@ -1,0 +1,99 @@
+id: "6.c"
+criterion: "Computability"
+sub_criterion: "Portable"
+
+practice: |
+  Maximize portability across computational resources where possible.
+  If data use requires specific resources, provide machine-readable
+  documentation defining these resources.
+
+intent: |
+  The data and software can be used across compute environments —
+  formats are widely-readable, and where exotic formats or specific
+  compute resources are required (GPU, large memory, specific OS),
+  those requirements are documented in a machine-readable way so a
+  downstream user can provision an environment that works.
+
+what_to_look_for:
+  - File formats on Datasets — widely-readable choices (CSV,
+    Parquet, HDF5, FITS, NIfTI, BAM, FASTQ) score better than
+    proprietary or version-locked formats with no spec.
+  - Container or environment references — Dockerfile / image
+    digests, Singularity recipes, conda environment.yml,
+    requirements.txt — attached to Software or Computation
+    entities.
+  - Hardware / resource requirements documented — GPU model,
+    memory floor, OS, accelerator, runtime needs.
+  - SoftwareRequirement / softwareRequirements properties on
+    Computation entities.
+
+extractor_inputs:
+  type: object
+  properties:
+    format_distribution:
+      type: object
+      description: |
+        counts by file format across Datasets — keys are MIME types
+        or extensions, values are counts.
+    common_format_count:
+      type: integer
+      description: |
+        count of Datasets in widely-readable formats (CSV, TSV,
+        Parquet, HDF5, FITS, NIfTI, BAM, FASTQ, JSON, JSONL, Zarr,
+        plus standard image / audio formats).
+    proprietary_format_count:
+      type: integer
+      description: count of Datasets in proprietary or specialized formats
+    container_references:
+      type: array
+      description: |
+        any references to Dockerfile / docker images / Singularity
+        recipes / conda environment files / requirements files
+        found on Software or Computation entities.
+    hardware_requirement_text:
+      type: array
+      description: |
+        narrative or additionalProperty entries describing hardware
+        / compute requirements (GPU, memory, OS, runtime).
+
+scoring:
+  "0":
+    label: "Absent"
+    rule: |
+      Formats are unspecified or proprietary with no documentation,
+      no environment / container references, no hardware
+      requirements where they would be needed.
+  "1":
+    label: "Partial"
+    rule: |
+      Most formats are common, but compute environment is
+      undocumented for software that needs it; or environment
+      references exist but coverage is partial.
+  "2":
+    label: "Substantive"
+    rule: |
+      Data formats are widely-readable (or proprietary formats
+      come with a spec / converter), and compute environment +
+      hardware requirements are documented for the parts that need
+      them — a downstream user can reproduce an environment from
+      the metadata.
+
+output_schema:
+  type: object
+  required: [score, rationale, evidence]
+  additionalProperties: false
+  properties:
+    score:
+      type: integer
+      enum: [0, 1, 2]
+    rationale:
+      type: string
+      description: "1–3 sentences citing the rule that applied."
+    evidence:
+      type: array
+      items: { type: string }
+      description: "Direct quotes or @id refs from the crate that justify the score."
+    gaps:
+      type: array
+      items: { type: string }
+      description: "Specific things missing that would raise the score. Empty if score is 2."

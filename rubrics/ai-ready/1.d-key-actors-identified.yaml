@@ -1,0 +1,122 @@
+id: "1.d"
+criterion: "Provenance"
+sub_criterion: "Key Actors Identified"
+
+practice: |
+  Identify people and organizations responsible for obtaining and
+  processing the data, the samples, and subject groups involved in
+  producing the data. Reference these parties along with other
+  dataset metadata.
+suggested_resources: ["ORCID", "ROR"]
+
+intent: |
+  The people and organizations responsible for the data are
+  identified preferably by persistent identifiers — ORCID for individuals,
+  ROR for organizations. This makes
+  attribution unambiguous and machine-resolvable across systems.
+
+  Identifier coverage is judged by *effort*, not by completeness.
+  If a substantial fraction of authors carry ORCIDs and a substantial
+  fraction of organizations carry ROR URIs, assume the missing ones
+  simply do not have one (not every researcher has an ORCID, and not
+  every organization is registered in ROR). Do NOT list each
+  individual missing ORCID / ROR as a gap when partial coverage is
+  already present.
+
+what_to_look_for:
+  - author / creator / contributor entries on the root dataset.
+  - publisher and (where applicable) principalInvestigator
+    or equivalent governance contact.
+  - ORCID URIs on people (https://orcid.org/...) — partial coverage
+    across the author list is acceptable evidence of effort.
+  - "ROR URIs on organizations (https://ror.org/...) — same: partial
+    coverage is acceptable."
+  - Coverage across roles — collection, processing, governance —
+    not just a single author.
+
+not_required:
+  - A ROR on the `publisher` field when `publisher` is the URL of a
+    data archive / repository (e.g. a Dataverse instance, Zenodo,
+    PhysioNet, Figshare). The publisher in those cases identifies the
+    *hosting archive*, not an institution, and rarely has a ROR.
+    Judge publisher adequacy by archive recognizability, not ROR.
+  - ORCIDs on governance / ethics / data-management contacts.
+    Programmatic roles are routinely held by staff who don't have
+    ORCIDs. A name + email + affiliation is sufficient.
+  - 100% ORCID coverage on authors. Some researchers don't have an
+    ORCID; this is not a defect in the crate.
+
+extractor_inputs:
+  type: object
+  properties:
+    author_count:
+      type: integer
+      description: number of authors / creators on the root dataset
+    authors_with_orcid_count:
+      type: integer
+      description: count of those whose @id or identifier resolves to an ORCID URI
+    publisher_present:
+      type: boolean
+      description: true if root publisher is set
+    publisher_has_ror:
+      type: boolean
+      description: |
+        True if the publisher @id or identifier resolves to a ROR URI.
+        Note: when the publisher is a data archive (Dataverse, Zenodo,
+        PhysioNet, Figshare, etc.) a ROR is not expected and absence
+        should not count against the score — see `not_required`.
+    principal_investigator_present:
+      type: boolean
+      description: true if a principalInvestigator (or equivalent governance contact) is set on the root dataset
+    root_actors:
+      type: object
+      description: |
+        Verbatim copies of root author, publisher,
+        principalInvestigator (and any contributor / contactPoint
+        entries) for the LLM to inspect.
+
+scoring:
+  "0":
+    label: "Absent"
+    rule: |
+      No actors identified, or only plain-string names with no
+      identifiers anywhere and no role coverage beyond a single
+      author.
+  "1":
+    label: "Partial"
+    rule: |
+      Actors are named and roles are covered, but persistent
+      identifiers are largely absent — e.g., zero or near-zero
+      ORCIDs across the author list, or organizations identified
+      only by name strings with no attempt at ROR.
+  "2":
+    label: "Substantive"
+    rule: |
+      Key actors are identified with role coverage across collection,
+      processing, and governance, AND a meaningful fraction of
+      authors carry ORCIDs (evidence of effort). Treat partial
+      ORCID / ROR coverage as Substantive — assume missing
+      identifiers belong to people / organizations who do not have
+      one. Do NOT downgrade for absent ROR on a publisher that is a
+      data archive, or for absent ORCIDs on governance / ethics
+      contacts.
+
+output_schema:
+  type: object
+  required: [score, rationale, evidence]
+  additionalProperties: false
+  properties:
+    score:
+      type: integer
+      enum: [0, 1, 2]
+    rationale:
+      type: string
+      description: "1–3 sentences citing the rule that applied."
+    evidence:
+      type: array
+      items: { type: string }
+      description: "Direct quotes or @id refs from the crate that justify the score."
+    gaps:
+      type: array
+      items: { type: string }
+      description: "Specific things missing that would raise the score. Empty if score is 2."

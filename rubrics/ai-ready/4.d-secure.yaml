@@ -1,0 +1,84 @@
+id: "4.d"
+criterion: "Ethics"
+sub_criterion: "Secure"
+
+practice: |
+  Specify security requirements for storing and accessing this data,
+  e.g., 'public', 'controlled access only', etc.
+suggested_resources: ["HL7 privacy protection metadata"]
+
+intent: |
+  Security and access classification is explicit and categorical. A
+  consumer can immediately tell whether data is open, controlled,
+  embargoed, or restricted, without parsing prose. This is the field
+  downstream tooling reads when deciding how to handle the bytes.
+
+what_to_look_for:
+  - confidentialityLevel — recognized HL7 code ("normal",
+    "restricted", "very restricted"). The primary categorical
+    signal a downstream tool reads.
+  - rai:personalSensitiveInformation — what kinds of sensitive
+    content are present (race, biometrics, geography, etc.).
+    Required signal where the data could plausibly contain such
+    content; explicit "none" is also informative.
+  - deidentified — boolean indicating whether identifying
+    information has been removed. Cross-checks against
+    confidentialityLevel and personalSensitiveInformation — data
+    flagged sensitive but not deidentified should carry a higher
+    confidentiality classification.
+
+# A deterministic rule could catch the easy cases on
+# confidentiality_level alone. The reason to keep the LLM is
+# cross-field reasoning — e.g., flagging a "normal" confidentiality
+# classification on data that lists biometrics as sensitive
+# information and is not deidentified.
+extractor_inputs:
+  type: object
+  properties:
+    confidentiality_level:
+      type: ["string", "null"]
+      description: confidentialityLevel on the root dataset (HL7 code — normal / restricted / very restricted)
+    rai_personalSensitiveInformation:
+      type: ["string", "null"]
+      description: rai:personalSensitiveInformation on the root dataset
+    deidentified:
+      type: ["boolean", "null"]
+      description: deidentified flag on the root dataset
+
+scoring:
+  "0":
+    label: "Absent"
+    rule: |
+      No security or access classification anywhere — neither
+      categorical fields nor narrative.
+  "1":
+    label: "Partial"
+    rule: |
+      Security is described in narrative only, with no categorical
+      field a tool can read; or the categorical field is set to a
+      free-text / non-recognized value.
+  "2":
+    label: "Substantive"
+    rule: |
+      A recognized categorical access classification is set on the
+      root dataset, machine-readable for downstream tooling.
+
+output_schema:
+  type: object
+  required: [score, rationale, evidence]
+  additionalProperties: false
+  properties:
+    score:
+      type: integer
+      enum: [0, 1, 2]
+    rationale:
+      type: string
+      description: "1–3 sentences citing the rule that applied."
+    evidence:
+      type: array
+      items: { type: string }
+      description: "Direct quotes or @id refs from the crate that justify the score."
+    gaps:
+      type: array
+      items: { type: string }
+      description: "Specific things missing that would raise the score. Empty if score is 2."

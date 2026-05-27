@@ -1,0 +1,101 @@
+id: "6.d"
+criterion: "Computability"
+sub_criterion: "Contextualized"
+
+practice: |
+  Include any considerations regarding splits of the data, including
+  any information withheld at any point of data collection and
+  processing. Provide examples of data components to aid
+  understanding of their general structure and content.
+suggested_resources: ["Croissant"]
+
+intent: |
+  A modeler can see how the data is meant to be split for analysis
+  (train / validation / test, or a deliberately undivided release),
+  what information was withheld at any point — exclusions, blinded
+  fields, embargoed records — and can find example records or
+  sample files to understand the structure before downloading the
+  full dataset.
+
+what_to_look_for:
+  - Split definitions — Datasets explicitly tagged as training /
+    validation / test / holdout, or a clear narrative that no
+    splits are predefined and rationale.
+  - Withheld-information documentation — fields excluded, records
+    held back, blinded variables, embargoed components, with
+    reason.
+  - Example records / sample files — a hasPart entity acting as a
+    sample, an example linked from a Dataset, or an inline excerpt.
+  - Croissant split semantics where the crate uses Croissant —
+    recordSet / split definitions.
+
+extractor_inputs:
+  type: object
+  properties:
+    split_text:
+      type: ["string", "null"]
+      description: |
+        any narrative on splits — root description, additionalProperty
+        with name like 'Split' or 'Train/Test', rai:dataPreprocessingProtocol
+        when discussing splits.
+    split_dataset_count:
+      type: integer
+      description: |
+        count of Datasets whose name or @type marks them as a split
+        (training, validation, test, holdout).
+    withheld_information_text:
+      type: ["string", "null"]
+      description: |
+        narrative describing withheld / excluded / blinded /
+        embargoed information at collection or processing time.
+    example_record_indicators:
+      type: array
+      description: |
+        @id refs of entities acting as examples / samples — names
+        containing 'example' / 'sample', exampleOfWork links,
+        small contentSize hasPart entries explicitly described as
+        examples.
+    preprocessing_text:
+      type: ["string", "null"]
+      description: rai:dataPreprocessingProtocol or similar narrative
+
+scoring:
+  "0":
+    label: "Absent"
+    rule: |
+      No split discussion, no withheld-information documentation,
+      no examples — a modeler can't tell how to use this data
+      without inspecting the bytes.
+  "1":
+    label: "Partial"
+    rule: |
+      Splits described OR withholding documented OR examples
+      provided, but not all three. Or splits are implied
+      (Datasets named 'train' / 'test') without rationale.
+  "2":
+    label: "Substantive"
+    rule: |
+      Splits are explicitly defined or explicitly absent with
+      rationale; withheld information is documented where it
+      applies; example records or sample files let a reader
+      preview structure.
+
+output_schema:
+  type: object
+  required: [score, rationale, evidence]
+  additionalProperties: false
+  properties:
+    score:
+      type: integer
+      enum: [0, 1, 2]
+    rationale:
+      type: string
+      description: "1–3 sentences citing the rule that applied."
+    evidence:
+      type: array
+      items: { type: string }
+      description: "Direct quotes or @id refs from the crate that justify the score."
+    gaps:
+      type: array
+      items: { type: string }
+      description: "Specific things missing that would raise the score. Empty if score is 2."

@@ -1,0 +1,84 @@
+id: "5.a"
+criterion: "Sustainability"
+sub_criterion: "Persistent"
+
+practice: |
+  Ensure unprocessed data is preserved in an archive that complies
+  with privacy laws and retention guidelines, enabling future
+  reprocessing and publishing of revised data.
+suggested_resources: ["TRUST Principles"]
+
+intent: |
+  The dataset is hosted somewhere that will still be reachable years
+  from now — a persistent identifier (DOI / Handle / ARK), a hosting
+  archive with retention commitments, and ideally TRUST / CoreTrustSeal
+  certification or equivalent. Long-term reprocessing depends on the
+  raw data not vanishing.
+
+what_to_look_for:
+  - DOI or other persistent identifier on the root dataset.
+  - Publisher / hosting archive identified — Dataverse, Zenodo,
+    PhysioNet, FAIRhub, BioStudies, dbGaP, etc.
+  - Reference to TRUST Principles, CoreTrustSeal, or another
+    repository certification scheme.
+  - Retention / preservation policy referenced.
+
+extractor_inputs:
+  type: object
+  properties:
+    root_identifier:
+      type: ["string", "null"]
+      description: identifier on the root dataset (DOI, handle, ARK, etc.)
+    identifier_is_pid:
+      type: boolean
+      description: |
+        true if root_identifier looks like a recognized persistent
+        identifier — doi.org, hdl.handle.net, n2t.net/ark, etc.
+    publisher_info:
+      type: ["object", "string", "null"]
+      description: publisher field on the root dataset
+    archive_indicators:
+      type: array
+      description: |
+        recognized archive hostnames / names found in publisher,
+        distribution, or root description — dataverse, zenodo,
+        physionet, fairhub, biostudies, dbgap, etc.
+
+scoring:
+  "0":
+    label: "Absent"
+    rule: |
+      No persistent identifier and no recognizable archive — only
+      a local @id or non-resolvable reference.
+  "1":
+    label: "Partial"
+    rule: |
+      A persistent identifier is present OR an archive is named,
+      but not both — or the archive is named without retention /
+      certification context.
+  "2":
+    label: "Substantive"
+    rule: |
+      Persistent identifier resolves AND a recognized archive is
+      identified, ideally with TRUST / CoreTrustSeal or equivalent
+      certification noted.
+
+output_schema:
+  type: object
+  required: [score, rationale, evidence]
+  additionalProperties: false
+  properties:
+    score:
+      type: integer
+      enum: [0, 1, 2]
+    rationale:
+      type: string
+      description: "1–3 sentences citing the rule that applied."
+    evidence:
+      type: array
+      items: { type: string }
+      description: "Direct quotes or @id refs from the crate that justify the score."
+    gaps:
+      type: array
+      items: { type: string }
+      description: "Specific things missing that would raise the score. Empty if score is 2."

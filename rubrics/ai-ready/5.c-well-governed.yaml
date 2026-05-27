@@ -1,0 +1,86 @@
+id: "5.c"
+criterion: "Sustainability"
+sub_criterion: "Well-governed"
+
+practice: |
+  Implement a data governance model before data capture, including a
+  repository that facilitates data stewardship in the future and
+  governance that accounts for maintenance, terms, policy changes,
+  and fairness.
+suggested_resources: ["FAIRsharing.org", "NIH GREI repositories"]
+
+intent: |
+  Governance is a real, identified structure — a committee or
+  steward, a contact, and a maintenance plan that says how the
+  dataset will be cared for over time. This is the human side of
+  sustainability, complementing 5.a (persistent hosting). Distinct
+  from 4.b (Ethically Managed), which focuses on privacy /
+  ethical-review processing — 5.c is about long-term stewardship.
+
+what_to_look_for:
+  - Data Governance Committee identified by name (committee or
+    organization).
+  - Governance contact / chairperson / steward — a person or role
+    a downstream user can write to.
+  - rai:dataReleaseMaintenancePlan or equivalent — what gets
+    maintained, on what cadence, who's responsible.
+  - Policy / terms-change process — how downstream users learn of
+    changes (versioning policy, deprecation policy).
+  - principalInvestigator on the root dataset, where the project
+    is PI-led rather than committee-governed.
+
+extractor_inputs:
+  type: object
+  properties:
+    governance_committee:
+      type: ["string", "null"]
+      description: |
+        dataGovernanceCommittee, or additionalProperty whose name
+        matches 'Data Governance Committee'.
+    maintenance_plan_text:
+      type: ["string", "null"]
+      description: |
+        rai:dataReleaseMaintenancePlan, or any narrative explicitly
+        labeled as a maintenance / stewardship plan.
+    principal_investigator:
+      type: ["string", "object", "null"]
+      description: principalInvestigator field on the root dataset
+
+scoring:
+  "0":
+    label: "Absent"
+    rule: |
+      No governance committee or steward identified, no
+      maintenance plan, no governance contact.
+  "1":
+    label: "Partial"
+    rule: |
+      Some governance signal present (e.g., a PI or a committee
+      named) but missing maintenance plan, terms-change process,
+      or actionable contact.
+  "2":
+    label: "Substantive"
+    rule: |
+      A governance structure is identified (committee or named
+      steward), an actionable contact is provided, and a
+      maintenance plan describes ongoing stewardship.
+
+output_schema:
+  type: object
+  required: [score, rationale, evidence]
+  additionalProperties: false
+  properties:
+    score:
+      type: integer
+      enum: [0, 1, 2]
+    rationale:
+      type: string
+      description: "1–3 sentences citing the rule that applied."
+    evidence:
+      type: array
+      items: { type: string }
+      description: "Direct quotes or @id refs from the crate that justify the score."
+    gaps:
+      type: array
+      items: { type: string }
+      description: "Specific things missing that would raise the score. Empty if score is 2."

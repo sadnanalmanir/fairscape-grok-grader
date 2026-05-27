@@ -1,0 +1,89 @@
+id: "6.b"
+criterion: "Computability"
+sub_criterion: "Computationally Accessible"
+
+practice: |
+  Provide a mechanism to access data through established exchange
+  protocols or a well-documented API.
+suggested_resources: ["FAIRsharing.org", "NIH GREI repositories"]
+
+intent: |
+  A program can fetch the data — the metadata gives at least one
+  resolvable access mechanism over a standard protocol (HTTPS, FTP,
+  S3) or a documented API. Where authentication is required, the
+  authentication procedure is described so a downstream tool can
+  follow it.
+
+what_to_look_for:
+  - distribution / contentUrl values on Datasets resolving over a
+    standard protocol — https, ftp, s3, gs, or equivalent.
+  - API endpoint reference (URL containing /api or pointing at an
+    OpenAPI / Swagger spec).
+  - Authentication procedure documented for controlled-access data
+    (where to register, what credentials to expect).
+  - Access instructions narrative on root description or
+    additionalProperty entries.
+
+extractor_inputs:
+  type: object
+  properties:
+    distribution_link_count:
+      type: integer
+      description: |
+        count of distribution / contentUrl entries across the root
+        and Datasets.
+    distinct_protocols:
+      type: array
+      description: |
+        unique URL schemes seen — https, http, ftp, s3, gs, etc.
+    api_link:
+      type: ["string", "null"]
+      description: |
+        any URL whose path contains /api, or that resolves to an
+        OpenAPI / Swagger / GraphQL spec.
+    access_instruction_text:
+      type: ["string", "null"]
+      description: |
+        narrative or additionalProperty entries describing how to
+        request access — registration, credentials, DUA workflow.
+
+scoring:
+  "0":
+    label: "Absent"
+    rule: |
+      No resolvable distribution links, no API reference, no
+      access instructions.
+  "1":
+    label: "Partial"
+    rule: |
+      Distribution links exist but use only a single mechanism
+      with no documentation; or controlled-access data lacks
+      instructions for how to actually request it; or links use
+      non-standard / proprietary schemes without explanation.
+  "2":
+    label: "Substantive"
+    rule: |
+      Datasets are reachable via a standard protocol or
+      well-documented API. Where access is gated, the
+      authentication / request procedure is documented sufficiently
+      for a downstream tool or user to proceed.
+
+output_schema:
+  type: object
+  required: [score, rationale, evidence]
+  additionalProperties: false
+  properties:
+    score:
+      type: integer
+      enum: [0, 1, 2]
+    rationale:
+      type: string
+      description: "1–3 sentences citing the rule that applied."
+    evidence:
+      type: array
+      items: { type: string }
+      description: "Direct quotes or @id refs from the crate that justify the score."
+    gaps:
+      type: array
+      items: { type: string }
+      description: "Specific things missing that would raise the score. Empty if score is 2."

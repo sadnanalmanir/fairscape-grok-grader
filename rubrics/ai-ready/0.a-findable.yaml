@@ -1,0 +1,83 @@
+id: "0.a"
+criterion: "FAIRness"
+sub_criterion: "Findable"
+
+practice: |
+  Deposit datasets in a searchable FAIR-compliant data repository.
+suggested_resources: ["FAIRsharing.org", "NIH GREI repositories"]
+
+intent: |
+  A discovery tool — a search engine, a DataCite query, a repository
+  index — can find this dataset. That requires a persistent
+  identifier (DOI / handle / ARK) and deposit in a repository whose
+  metadata is harvestable and indexed.
+
+# DRAFT — overlaps with 5.a Persistent, which uses the same evidence
+# (root_identifier, publisher_info, archive_indicators) framed for
+# long-term durability rather than discoverability. Reviewer may
+# decide to consolidate or keep these as paired rubrics scoring the
+# same evidence on different axes.
+what_to_look_for:
+  - DOI or other persistent identifier on the root dataset.
+  - Publisher / hosting archive that's recognized as FAIR-compliant
+    and harvestable — DataCite-registered, FAIRsharing-listed, or
+    listed in NIH GREI.
+  - Archive name resolves to a known data repository
+    (Dataverse, Zenodo, PhysioNet, FAIRhub, BioStudies, dbGaP,
+    GEO, etc.) rather than a personal or project-only host.
+
+extractor_inputs:
+  type: object
+  properties:
+    root_identifier:
+      type: ["string", "null"]
+      description: identifier on the root dataset (DOI, handle, ARK, etc.)
+    publisher_info:
+      type: ["object", "string", "null"]
+      description: publisher field on the root dataset
+    archive_indicators:
+      type: array
+      description: |
+        recognized FAIR-compliant archive hostnames / names found in
+        publisher, distribution, or root description — dataverse,
+        zenodo, physionet, fairhub, biostudies, dbgap, geo, etc.
+
+scoring:
+  "0":
+    label: "Absent"
+    rule: |
+      No persistent identifier and no recognizable FAIR-compliant
+      archive — the dataset is not discoverable through a standard
+      search.
+  "1":
+    label: "Partial"
+    rule: |
+      Either a persistent identifier OR a recognized archive is
+      present, but not both — discovery is possible but only
+      through one path.
+  "2":
+    label: "Substantive"
+    rule: |
+      Persistent identifier resolves AND deposit is in a recognized
+      FAIR-compliant repository — the FAIR baseline for findability
+      is met.
+
+output_schema:
+  type: object
+  required: [score, rationale, evidence]
+  additionalProperties: false
+  properties:
+    score:
+      type: integer
+      enum: [0, 1, 2]
+    rationale:
+      type: string
+      description: "1–3 sentences citing the rule that applied."
+    evidence:
+      type: array
+      items: { type: string }
+      description: "Direct quotes or @id refs from the crate that justify the score."
+    gaps:
+      type: array
+      items: { type: string }
+      description: "Specific things missing that would raise the score. Empty if score is 2."

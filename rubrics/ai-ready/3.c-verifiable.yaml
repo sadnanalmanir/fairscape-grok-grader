@@ -1,0 +1,109 @@
+id: "3.c"
+criterion: "Pre-model Explainability"
+sub_criterion: "Verifiable"
+
+practice: |
+  Provide a mechanism for ensuring the integrity of each raw or
+  processed dataset, such as a cryptographic hash.
+suggested_resources: ["SHA256", "Merkle Trees"]
+
+intent: |
+  A downstream consumer can verify that the bytes they received are
+  the bytes the producer intended to ship. In practice this means
+  cryptographic hashes (SHA-256, MD5) attached to each Dataset and
+  Software entity. Coverage matters: a single hash on the crate root
+  is weaker than per-file hashes, because a partial download or a
+  swapped file would not be detected.
+
+what_to_look_for:
+  - md5, sha256, contentChecksum, hash properties on Dataset entities.
+  - Same on Software entities (especially for executable / pickled
+    artifacts).
+  - Per-file hashes vs. a single archive-level hash. Per-file is
+    stronger.
+  - For sub-crates (release-of-crates pattern), hashes on each
+    sub-crate package.
+
+# The extractor counts hash coverage and groups entities by access mode
+# so the grader can apply the embargo caveat. Aggregation across
+# sub-crates is the extractor's responsibility.
+#
+# Gap vs. current AIReady.py: today coverage is computed across "all
+# entities" — too broad. Hash applicability is really Dataset +
+# Software. Access mode is also not surfaced today, which means an
+# embargoed-only release scores the same as a public one with no
+# hashes (both "no hashes found"), which is the wrong signal.
+extractor_inputs:
+  type: object
+  properties:
+    total_hashable_entities:
+      type: integer
+      description: count of Dataset + Software entities (root crate excluded)
+    entities_with_hash:
+      type: integer
+      description: count of those with md5, sha256, or contentChecksum set
+    hash_coverage:
+      type: ["number", "null"]
+      description: |
+        entities_with_hash / total_hashable_entities, or null when
+        total_hashable_entities is 0.
+
+# 3.c is the most countable of the criteria. A pure deterministic rule
+# would catch the easy cases; the embargo caveat is the reason to keep
+# an LLM in the loop for now. Decision pending: go LLM, go
+# deterministic-only, or run both and reconcile when they disagree.
+deterministic_alt:
+  rule: |
+    if hash_coverage is None or hash_coverage == 0:
+        score = 0
+    elif hash_coverage > 0.5:
+        score = 2
+    else:
+        score = 1
+  caveat: |
+    Entities under embargo or controlled access may legitimately lack
+    a published cryptographic hash. When a substantial fraction of
+    hashable entities are non-public (access_mode_distribution shows
+    controlled or embargoed dominant), low hash_coverage should not
+    be treated as a project deficiency. The LLM grader can apply this
+    judgment; a pure deterministic rule cannot.
+
+scoring:
+  "0":
+    label: "Absent"
+    rule: |
+      No checksums on any Dataset or Software entity.
+  "1":
+    label: "Partial"
+    rule: |
+      Some entities carry checksums but coverage is incomplete — e.g.,
+      datasets hashed but software is not, or only a subset of files
+      are hashed, or only a single archive-level hash exists where
+      per-file hashes would be expected.
+  "2":
+    label: "Substantive"
+    rule: |
+      Substantively all (~all) Dataset and Software entities carry a
+      cryptographic hash (SHA-256 or MD5), enabling per-entity
+      integrity verification.
+
+# What the LLM grader returns. Identical schema across all rubrics.
+output_schema:
+  type: object
+  required: [score, rationale, evidence]
+  additionalProperties: false
+  properties:
+    score:
+      type: integer
+      enum: [0, 1, 2]
+    rationale:
+      type: string
+      description: "1–3 sentences citing the rule that applied."
+    evidence:
+      type: array
+      items: { type: string }
+      description: "Direct quotes or @id refs from the crate that justify the score."
+    gaps:
+      type: array
+      items: { type: string }
+      description: "Specific things missing that would raise the score. Empty if score is 2."

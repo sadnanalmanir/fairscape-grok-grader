@@ -1,0 +1,95 @@
+id: "2.a"
+criterion: "Characterization"
+sub_criterion: "Semantics"
+
+practice: |
+  Use comprehensive descriptive metadata for datasets, including a
+  detailed abstract, dataset keywords, and subject-specific
+  vocabularies (e.g., MeSH) to enable detailed search and discovery.
+suggested_resources: ["Datacite schema", "Schema.org"]
+
+intent: |
+  The crate is discoverable beyond an exact-name search. A reader
+  scanning a catalog can tell what this dataset is about from a
+  detailed abstract, topical keywords, and subject terms grounded
+  in standard biomedical vocabularies (MeSH, EDAM, NCIt, etc.).
+
+what_to_look_for:
+  - Root description that's a real abstract — multiple sentences,
+    domain-specific, distinguishing this dataset from a sibling.
+  - Keywords array on the root, populated and topical (not just
+    "data", "biomedical", "research").
+  - Subject terms grounded in an ontology — about / subjectOf /
+    keyword entries that resolve to MeSH, EDAM, NCIt, or similar
+    IRIs, not just free-text strings.
+  - Per-Dataset description and keywords for major datasets, not
+    just the root.
+
+extractor_inputs:
+  type: object
+  properties:
+    root_description:
+      type: string
+      description: root dataset 'description' text
+    root_description_length:
+      type: integer
+      description: character length of root description
+    root_keywords:
+      type: array
+      description: root dataset 'keywords' array
+    dataset_count:
+      type: integer
+      description: count of entities whose @type contains 'Dataset' (root crate excluded)
+    dataset_samples:
+      type: array
+      description: |
+        Up to 10 input Dataset entity dicts. Include @id, name, description.
+    ontology_term_count:
+      type: integer
+      description: |
+        count of about / subjectOf / keyword entries (across root and
+        Datasets) that resolve to an ontology IRI — meshb.nlm.nih.gov,
+        purl.obolibrary.org, edamontology.org, etc.
+    ontology_term_samples:
+      type: array
+      description: up to 20 example ontology IRIs found, for the LLM to inspect
+
+scoring:
+  "0":
+    label: "Absent"
+    rule: |
+      Description is one line or generic, no keywords, no ontology
+      terms anywhere.
+  "1":
+    label: "Partial"
+    rule: |
+      Description and keywords are present and topical, but subject
+      terms are free-text only — no grounding in standard
+      vocabularies — or grounding is present only on the root with
+      no per-Dataset coverage.
+  "2":
+    label: "Substantive"
+    rule: |
+      Detailed abstract plus topical keywords plus ontology-grounded
+      subject terms (MeSH, EDAM, etc.), with at least the major
+      Datasets carrying their own descriptive metadata.
+
+output_schema:
+  type: object
+  required: [score, rationale, evidence]
+  additionalProperties: false
+  properties:
+    score:
+      type: integer
+      enum: [0, 1, 2]
+    rationale:
+      type: string
+      description: "1–3 sentences citing the rule that applied."
+    evidence:
+      type: array
+      items: { type: string }
+      description: "Direct quotes or @id refs from the crate that justify the score."
+    gaps:
+      type: array
+      items: { type: string }
+      description: "Specific things missing that would raise the score. Empty if score is 2."
