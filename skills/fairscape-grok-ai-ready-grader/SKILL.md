@@ -122,7 +122,7 @@ Set temperature=0.0 (the library does this).
 - The Python `fairscape_grok_grader.grok_scorer` module can be used completely standalone or from other agents.
 - Easier to run the pure scoring loop from CI or notebooks (just an API key + the evidence dir).
 
-## Out of Scope (v0.1)
+## Out of Scope (v0.2)
 
 - Full 6-phase remote-source wizard (import → schema → enrich → provenance → grade → improve). The grading core is the priority.
 - Re-implementing all 28 complex extractors (we depend on `fairscape-wizard` for now; this is the correct factoring).

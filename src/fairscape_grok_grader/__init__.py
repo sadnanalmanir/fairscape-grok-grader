@@ -7,7 +7,7 @@ Replaces the Claude-based agentic scoring in fairscape/fairscape_grader
 with xAI Grok models + Grok skills / subagents for isolated, reproducible scoring.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 # Automatically load variables from .env file in the current directory
 # (or parent directories). This allows users to keep XAI_API_KEY in a .env
