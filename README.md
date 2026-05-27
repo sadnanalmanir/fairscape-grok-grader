@@ -41,11 +41,22 @@ The isolation contract is preserved exactly: a score for rubric `2.d` depends *o
    pip install -e ".[full]"
    ```
 
-2. Make sure you have an xAI API key:
+2. Configure your xAI API key (multiple options supported):
+
+   **Recommended:** Create a `.env` file in your working directory:
 
    ```bash
-   export XAI_API_KEY=...
+   XAI_API_KEY=sk-...
    ```
+
+   The package automatically loads `.env` files on import (thanks to `python-dotenv`).
+
+   **Alternative options:**
+   - Environment variable: `export XAI_API_KEY=sk-...`
+   - CLI flag: `fairscape-grok ... --xai-key sk-...`
+   - Pass explicitly in Python code
+
+   A `.env.example` file is included in the repository.
 
 3. In any directory with (or next to) an RO-Crate, invoke:
 

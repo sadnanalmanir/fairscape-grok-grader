@@ -59,8 +59,13 @@ def _get_xai_client(api_key: Optional[str] = None):
     key = api_key or os.environ.get("XAI_API_KEY") or os.environ.get("GROK_API_KEY")
     if not key:
         raise RuntimeError(
-            "No xAI API key found. Set XAI_API_KEY (or GROK_API_KEY) environment variable, "
-            "or pass api_key=... explicitly."
+            "No xAI API key found.\n"
+            "Supported options (in order of precedence):\n"
+            "  1. Pass api_key=... explicitly to the function\n"
+            "  2. Set XAI_API_KEY (or GROK_API_KEY) environment variable\n"
+            "  3. Create a .env file in your working directory with XAI_API_KEY=...\n\n"
+            "Example .env file:\n"
+            "    XAI_API_KEY=your_key_here"
         )
     return OpenAI(api_key=key, base_url=XAI_API_BASE)
 

@@ -10,7 +10,7 @@ Usage examples:
     fairscape-grok score ./grading/ --model grok-3
 
     # Full one-shot (extract + score)
-    fairscape-grok grade ./ro-crate-metadata.json ./output-grading/ --xai-key $XAI_API_KEY
+    fairscape-grok grade ./ro-crate-metadata.json ./output-grading/   # uses .env or env var
 """
 
 from __future__ import annotations
@@ -45,7 +45,13 @@ def cmd_score(args: argparse.Namespace) -> int:
 
     api_key = args.xai_key or os.environ.get("XAI_API_KEY") or os.environ.get("GROK_API_KEY")
     if not api_key:
-        console.print("[red]No xAI API key. Set XAI_API_KEY or pass --xai-key.[/red]")
+        console.print(
+            "[red]No xAI API key found.[/red]\n"
+            "Supported options:\n"
+            "  • --xai-key YOUR_KEY\n"
+            "  • Environment variable XAI_API_KEY or GROK_API_KEY\n"
+            "  • .env file in the current directory containing XAI_API_KEY=..."
+        )
         return 1
 
     model = args.model or "grok-3"
@@ -198,7 +204,10 @@ def main(argv: Optional[list[str]] = None) -> int:
     p_score = sub.add_parser("score", help="Score rubrics from a pre-existing evidence directory")
     p_score.add_argument("grading_dir", help="Directory containing <id>-<slug>/rubric.yaml + evidence.json")
     p_score.add_argument("--model", default="grok-3", help="Grok model name (default: grok-3)")
-    p_score.add_argument("--xai-key", help="xAI API key (falls back to XAI_API_KEY / GROK_API_KEY env)")
+    p_score.add_argument(
+        "--xai-key",
+        help="xAI API key (also supports XAI_API_KEY/GROK_API_KEY env var or .env file)",
+    )
     p_score.add_argument("--criterion", help="Only score one criterion (0-6)")
 
     # grade subcommand (extract + score)

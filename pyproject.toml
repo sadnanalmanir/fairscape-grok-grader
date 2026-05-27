@@ -29,6 +29,7 @@ dependencies = [
     "pyyaml",
     "rich",
     "openai>=1.0",  # for xAI Grok API (OpenAI-compatible)
+    "python-dotenv>=1.0",  # for loading XAI_API_KEY from .env files
 ]
 
 [project.optional-dependencies]

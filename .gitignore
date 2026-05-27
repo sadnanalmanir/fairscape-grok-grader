@@ -39,6 +39,11 @@ grading/
 *.aggregated_score.json
 .fairscape-*-state.json
 
+# Environment variables (never commit real keys)
+.env
+.env.local
+.env.*.local
+
 # Keep the rubric YAMLs but ignore any generated evidence during testing
 rubrics/ai-ready/*/*.json
 !rubrics/ai-ready/*/*.yaml
