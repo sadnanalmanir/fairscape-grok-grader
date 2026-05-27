@@ -1,5 +1,9 @@
 # fairscape-grok-grader
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
+[![GitHub](https://img.shields.io/badge/GitHub-sadnanalmanir%2Ffairscape--grok--grader-blue?logo=github)](https://github.com/sadnanalmanir/fairscape-grok-grader)
+
 **Grok-native AI-Ready rubric grader for FAIRSCAPE RO-Crates.**
 
 This project is the direct Grok / xAI equivalent of the Claude-based grading system in [fairscape/fairscape_grader](https://github.com/fairscape/fairscape_grader).
